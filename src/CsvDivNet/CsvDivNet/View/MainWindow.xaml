@@ -1,0 +1,227 @@
+﻿<Window x:Class="CsvDivNet.View.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:CsvDivNet"
+        xmlns:vm="clr-namespace:CsvDivNet.Core"
+        xmlns:vw="clr-namespace:CsvDivNet.View"
+        DataContext="{Binding Source={x:Static local:ServiceLocator.MainWindowViewModel}}"
+        Title="CSV分割" WindowStartupLocation="CenterScreen" Width="680" Height="600">
+    <Window.Resources>
+        <Style TargetType="Label">
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="10" Opacity="1" ShadowDepth="0" Direction="0"  Color="White" RenderingBias="Performance"></DropShadowEffect>
+                    <!--<OuterGlowBitmapEffect GlowColor="{x:Static SystemColors.WindowColor}" />-->
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="TextBlock">
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="10" Opacity="1" ShadowDepth="0" Direction="0"  Color="White" RenderingBias="Performance"></DropShadowEffect>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <ControlTemplate x:Key="validationErrorTemplate">
+            <Grid>
+                <Border Background="MediumVioletRed" Width="15" Height="15" HorizontalAlignment="Right" CornerRadius="5" Margin="0,0,4,0">
+                    <Border.ToolTip>
+                        <Binding ElementName="adornedelem" Path="AdornedElement.(Validation.Errors).CurrentItem.ErrorContent"></Binding>
+                    </Border.ToolTip>
+                    <TextBlock TextAlignment="Center" Foreground="White" FontWeight="Bold" VerticalAlignment="Center">!</TextBlock>
+                </Border>
+                <AdornedElementPlaceholder x:Name="adornedelem">
+                    <Border BorderBrush="MediumVioletRed" BorderThickness="2" Width="{Binding ElementName=adornedelem, Path=AdornedElement.ActualWidth}">
+                    </Border>
+                </AdornedElementPlaceholder>
+            </Grid>
+        </ControlTemplate>
+        <Style TargetType="TextBox">
+            <Setter Property="Validation.ErrorTemplate" Value="{StaticResource validationErrorTemplate}" />
+        </Style>
+        <vw:SampleOutputFileValueConverter x:Key="sampleFileNameConverter" />
+    </Window.Resources>
+    <DockPanel MinWidth="350"  LastChildFill="True" Grid.IsSharedSizeScope="True">
+        <GroupBox x:Name="grpInput" DockPanel.Dock="Top">
+            <GroupBox.Header>
+                <TextBlock Text="入力ファイル" />
+            </GroupBox.Header>
+            <Grid vw:MarginSetter.Margin="1,2,1,2" Width="{Binding Source={RelativeSource AncestorType={x:Type GroupBox}, Mode=FindAncestor}, Path=Width }">
+                <Grid.RowDefinitions>
+                    <RowDefinition SharedSizeGroup="RowGrp" Height="30" />
+                    <RowDefinition SharedSizeGroup="RowGrp"/>
+                    <RowDefinition SharedSizeGroup="RowGrp"/>
+                    <RowDefinition SharedSizeGroup="RowGrp"/>
+                    <RowDefinition SharedSizeGroup="RowGrp"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition SharedSizeGroup="ColGrp" Width="auto" />
+                    <ColumnDefinition Width="*" MinWidth="120" />
+                    <ColumnDefinition SharedSizeGroup="ColGrp" />
+                    <ColumnDefinition Width="*"  MinWidth="120" />
+                </Grid.ColumnDefinitions>
+                <Label Grid.Column="0" Grid.Row="0" Content="分割対象ファイル"></Label>
+                <DockPanel Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="3" LastChildFill="True">
+                    <Button DockPanel.Dock="Right" Content="..." Width="30" Command="{Binding SelectInputFileCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window, Mode=FindAncestor}}" ></Button>
+                    <!-- UpdateSourceTrigger=PropertyChanged -->
+                    <TextBox Text="{Binding Config.InputFileName, ValidatesOnDataErrors=True}"  AllowDrop="True" vw:Drop.Kind="File" vw:Drop.DroppedCommand="{Binding InputFileChangedCommand}"></TextBox>
+                </DockPanel>
+                <Label Grid.Column="0" Grid.Row="1" Content="文字コード"></Label>
+                <ComboBox Grid.Column="1" Grid.Row="1" ItemsSource="{x:Static vw:Constants.SupportedEncodings}"
+                          DisplayMemberPath="Item1" SelectedValuePath="Item2" SelectedValue="{Binding Config.InputFileEncodingName}">
+                </ComboBox>
+                <Label Grid.Column="0" Grid.Row="2" Content="データ区分文字"></Label>
+                <ComboBox Grid.Column="1" Grid.Row="2"  ItemsSource="{x:Static vw:Constants.SupportedDelimiters}"
+                          DisplayMemberPath="Item1" SelectedValuePath="Item2" SelectedValue="{Binding Config.Delimitor}">
+                </ComboBox>
+                <CheckBox Grid.Column="2" Grid.Row="2"  VerticalAlignment="Center" IsChecked="{Binding Config.IsDQuoted}">
+                    <CheckBox.Content>
+                        <TextBlock Text="&quot;で囲まれている" />
+                    </CheckBox.Content>
+                </CheckBox>
+                <Label Grid.Column="0" Grid.Row="3" Content="ヘッダオプション"></Label>
+                <ComboBox x:Name="cmbHeaderOption" Grid.Column="1" Grid.Row="3" Grid.ColumnSpan="2" ItemsSource="{x:Static vw:Constants.HeaderModes}"
+                          DisplayMemberPath="Item1" SelectedValuePath="Item2" SelectedValue="{Binding Config.HeaderMode}">
+                </ComboBox>
+                <Label Grid.Column="0" Grid.Row="4" Content="外部ヘッダファイル"></Label>
+                <DockPanel Grid.Column="1" Grid.Row="4" Grid.ColumnSpan="3" LastChildFill="True">
+                    <DockPanel.Style>
+                        <Style>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Path=Config.HeaderMode}"  Value="FirstRow">
+                                    <Setter Property="UIElement.IsEnabled" Value="False" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Path=Config.HeaderMode}"  Value="None">
+                                    <Setter Property="UIElement.IsEnabled" Value="False" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DockPanel.Style>
+                    <Button DockPanel.Dock="Right" Content="..." Width="30" Command="{Binding SelectHeaderFileCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window, Mode=FindAncestor}}"></Button>
+                    <TextBox Text="{Binding Config.HeaderFileName, ValidatesOnDataErrors=True}" vw:Drop.Kind="File"></TextBox>
+                </DockPanel>
+            </Grid>
+        </GroupBox>
+        <GroupBox  DockPanel.Dock="Top">
+            <GroupBox.Header>
+                <TextBlock Text="出力ファイル" />
+            </GroupBox.Header>
+            <Grid vw:MarginSetter.Margin="1,3,1,2">
+                <Grid.RowDefinitions>
+                    <RowDefinition SharedSizeGroup="RowGrp"/>
+                    <RowDefinition SharedSizeGroup="RowGrp"/>
+                    <RowDefinition SharedSizeGroup="RowGrp"/>
+                    <RowDefinition SharedSizeGroup="RowGrp"/>
+                    <RowDefinition SharedSizeGroup="RowGrp"/>
+                    <RowDefinition SharedSizeGroup="RowGrp"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition SharedSizeGroup="ColGrp" />
+                    <ColumnDefinition Width="*" MinWidth="120" />
+                    <ColumnDefinition SharedSizeGroup="ColGrp" />
+                    <ColumnDefinition Width="*" MinWidth="120" />
+                </Grid.ColumnDefinitions>
+                <Label Grid.Column="0" Grid.Row="0" Content="出力先ディレクトリ"></Label>
+                <CheckBox x:Name="cbxOutputSame" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="3" VerticalAlignment="Center"
+                          IsChecked="{Binding Config.OutputInputFileDirectory}" Command="{Binding OutputInputFileDirectoryCommand}">
+                    <CheckBox.Content>
+                        <TextBlock Text="分割対象ファイルと同じディレクトリに出力" />
+                    </CheckBox.Content>
+                </CheckBox>
+                <DockPanel Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="3" LastChildFill="True">
+                    <DockPanel.Style>
+                        <Style>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Config.OutputInputFileDirectory}"  Value="True">
+                                    <Setter Property="UIElement.IsEnabled" Value="False" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Config.OutputInputFileDirectory}" Value="False">
+                                    <Setter  Property="UIElement.IsEnabled" Value="True" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DockPanel.Style>
+                    <Button DockPanel.Dock="Right" Content="..." Width="30" Command="{Binding SelectOutputDirectoryCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window, Mode=FindAncestor}}"></Button>
+                    <TextBox Text="{Binding Config.OutputDirectoryName, ValidatesOnDataErrors=True}"  vw:Drop.Kind="Directory"></TextBox>
+                </DockPanel>
+                <Label Grid.Column="0" Grid.Row="2" Content="出力ファイルベース名"></Label>
+                <TextBox  Grid.Column="1" Grid.Row="2" Text="{Binding Config.OutputFileBase, ValidatesOnDataErrors=True}" ></TextBox>
+                <Label Grid.Column="2" Grid.Row="2" Content="ファイル拡張子"></Label>
+                <TextBox  Grid.Column="3" Grid.Row="2" Text="{Binding Config.OutputFileExtention, ValidatesOnDataErrors=True}" ></TextBox>
+                <Label Grid.Column="0" Grid.Row="3" Content="文字コード"></Label>
+                <ComboBox Grid.Column="1" Grid.Row="3" ItemsSource="{x:Static vw:Constants.SupportedEncodings}"
+                          DisplayMemberPath="Item1" SelectedValuePath="Item2" SelectedValue="{Binding Config.OutputFileEncodingName}"></ComboBox>
+                <Label Grid.Column="2" Grid.Row="3" Content="ファイル形式"></Label>
+                <ComboBox Grid.Column="4" Grid.Row="3" ItemsSource="{x:Static vw:Constants.SupportedOutputFormats}"
+                          DisplayMemberPath="Item1" SelectedValuePath="Item2" SelectedValue="{Binding Config.OutputFileFormat}"></ComboBox>
+                <Label Grid.Column="0" Grid.Row="4" Content="分割行数単位"></Label>
+                <TextBox  Grid.Column="1" Grid.Row="4">
+                    <TextBox.Text>
+                        <Binding Path="Config.MaxRowCount" ValidatesOnDataErrors="True">
+                            <Binding.ValidationRules>
+                                <vw:NumericValidation AllowEmpty="False" />
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </TextBox.Text>
+                </TextBox>
+                <Label Grid.Column="2" Grid.Row="4" Content="ファイル枝番桁数"></Label>
+                <ComboBox Grid.Column="3" Grid.Row="4"  
+                          ItemsSource="{x:Static vw:Constants.EdabanDigits}" SelectedValue="{Binding Config.SeqNoDigits}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                </ComboBox>
+                <Label Grid.Column="0" Grid.Row="5" Content="ファイル名例"></Label>
+                <TextBlock Grid.Column="1" Grid.Row="5" Grid.ColumnSpan="3" VerticalAlignment="Center">
+                    <TextBlock.Text>
+                        <MultiBinding Converter="{StaticResource sampleFileNameConverter}">
+                            <Binding Path="Config.OutputFileBase" />
+                            <Binding Path="Config.SeqNoDigits" />
+                            <Binding Path="Config.OutputFileExtention" />
+                            <Binding Path="Config.OutputFileFormat" />
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+            </Grid>
+        </GroupBox>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Bottom">
+            <Button Content="分割" Width="100" Margin="5" Command="{Binding DivideCommand}"
+                    CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window, Mode=FindAncestor}}">
+                <Button.BitmapEffect>
+                    <OuterGlowBitmapEffect GlowColor="Blue" GlowSize="20" Noise="1" Opacity="0.5"></OuterGlowBitmapEffect>
+                </Button.BitmapEffect>
+                <Button.Style>
+                    <Style>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Path=IsDividing}"  Value="True">
+                                <Setter Property="UIElement.IsEnabled" Value="False" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Path=IsDividing}"  Value="False">
+                                <Setter Property="UIElement.IsEnabled" Value="True" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+
+            </Button>
+            <Button Content="閉じる" Width="100" Margin="5" 
+                    Command="{Binding CloseCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window, Mode=FindAncestor}}">
+                <Button.Style>
+                    <Style>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Path=IsDividing}"  Value="True">
+                                <Setter Property="UIElement.IsEnabled" Value="False" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Path=IsDividing}"  Value="False">
+                                <Setter Property="UIElement.IsEnabled" Value="True" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </StackPanel>
+        <GroupBox>
+            <GroupBox.Header>
+                <TextBlock Text="分割ログ" />
+            </GroupBox.Header>
+            <TextBox x:Name="txtLog"  TextWrapping="Wrap" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" IsReadOnly="True" MinHeight="100"  ></TextBox>
+        </GroupBox>
+    </DockPanel>
+</Window>
