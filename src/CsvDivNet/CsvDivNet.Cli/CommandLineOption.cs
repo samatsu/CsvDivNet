@@ -278,7 +278,6 @@ namespace CsvDivNet
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("Usage:");
             builder.Append(Process.GetCurrentProcess().ProcessName);
-            builder.Append(" " + CommandLineOption.ConsoleSwitch);
             builder.Append(" " + CommandLineOption.ConfigOption + "configfile");
             builder.Append(" " + CommandLineOption.HeaderModeOption + "headermode");
             builder.Append(" " + CommandLineOption.HeaderFileOption + "headerfile");
@@ -299,7 +298,7 @@ namespace CsvDivNet
             builder.AppendLine(string.Empty);
 
             builder.AppendLine("オプション説明(各オプションはコンソールモードの場合のみ有効)");
-            builder.AppendLine(string.Format(optionMessage, CommandLineOption.ConsoleSwitch, "コンソールモードで起動します。指定がない場合、ウィンドウモードで起動します。"));
+            builder.AppendLine(string.Format(optionMessage, CommandLineOption.ConsoleSwitch, "互換性のために残されています。このスイッチは無視されます。"));
             builder.AppendLine(string.Format(optionMessage, CommandLineOption.ConfigOption, "CSV分割設定ファイルを指定します.ウィンドウモードの場合無視されます."));
             builder.AppendLine(string.Format(optionMessage, CommandLineOption.HeaderModeOption, "ヘッダモード。次のいづれかを指定None,FirstRow,ExternalFile"));
             builder.AppendLine(string.Format(optionMessage, CommandLineOption.HeaderFileOption, "外部ヘッダファイルを指定。ヘッダモードで、ExternalFileを指定した場合のみ有効です."));
